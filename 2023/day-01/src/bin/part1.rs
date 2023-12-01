@@ -4,7 +4,7 @@ use std::{fs::File, io::Read};
 // Correct!
 // but this is also inefficient as all hell
 fn main() -> Result<()> {
-    let mut input = File::open("day-01/input1.txt")?;
+    let mut input = File::open(format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "input1.txt"))?;
     let mut contents = String::new();
     input.read_to_string(&mut contents)?;
     let out = calibrate(contents);
@@ -14,41 +14,27 @@ fn main() -> Result<()> {
 }
 
 fn calibrate(contents: String) -> usize {
-    contents
-        .split_ascii_whitespace()
-        .map(|s| find_digits(s))
-        .sum()
+    contents.lines().map(|s| find_digits(s)).sum()
 }
 
 fn find_digits(s: &str) -> usize {
-    let mut l = 0;
-    let mut r = s.len() - 1;
-    let mut a = 0;
-    let mut b = 0;
+    let mut sum = 0;
 
-    let mut end = false;
-    while !end {
-        match s.chars().nth(l) {
-            Some(x) if x.is_digit(10) => {
-                a = x.to_digit(10).unwrap();
-                end = true;
+    // zero does not appear in the items in any capacity
+    let mut recent = None;
+    for ch in s.chars() {
+        match ch {
+            x if x.is_digit(10) => {
+                if recent.is_none() {
+                    sum += x.to_digit(10).unwrap() * 10;
+                }
+                recent = Some(x.to_digit(10).unwrap());
             }
-            Some(_) => l += 1,
-            None => end = true,
+            _ => {}
         }
     }
-    end = false;
-    while !end {
-        match s.chars().nth(r) {
-            Some(x) if x.is_digit(10) => {
-                b = x.to_digit(10).unwrap();
-                end = true;
-            }
-            Some(_) => r -= 1,
-            None => end = true,
-        }
-    }
-    (a * 10 + b) as usize
+    sum += recent.unwrap_or(0);
+    sum as usize
 }
 
 #[cfg(test)]
