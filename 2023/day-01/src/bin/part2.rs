@@ -6,7 +6,7 @@ use std::{
 };
 
 fn main() -> Result<()> {
-    let mut input = File::open("day-01/input2.txt")?;
+    let mut input = File::open(format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "input2.txt"))?;
     let mut contents = String::new();
     input.read_to_string(&mut contents)?;
     let out = calibrate(contents);
@@ -16,17 +16,14 @@ fn main() -> Result<()> {
 }
 
 fn calibrate(contents: String) -> usize {
-    contents
-        .split_ascii_whitespace()
-        .map(|s| find_digits(s))
-        .sum()
+    contents.lines().map(|s| find_digits(s)).sum()
 }
 
 fn find_digits(s: &str) -> usize {
     // iterate from left and right to compare if there are digits or words that are the numbers that are needed
     let mut word = VecDeque::new();
 
-    let hash: HashMap<String, u8> = HashMap::from([
+    let hash: HashMap<String, u32> = HashMap::from([
         ("one".to_owned(), 1),
         ("two".to_owned(), 2),
         ("three".to_owned(), 3),
@@ -38,52 +35,33 @@ fn find_digits(s: &str) -> usize {
         ("nine".to_owned(), 9),
     ]);
 
-    let mut l = 0;
-    let mut r = s.len() - 1;
-    let mut a = 0;
-    let mut b = 0;
+    let mut sum = 0;
 
-    let mut end = false;
-    while !end {
-        match s.chars().nth(l) {
-            Some(x) if x.is_digit(10) => {
-                a = x.to_digit(10).unwrap();
-                end = true;
-            }
-            Some(letter) => {
-                update_word(&mut word, letter);
-                if let Some(val) = check_word(&word, &hash, true) {
-                    a = *val as u32;
-                    end = true;
+    // zero does not appear in the items in any capacity
+    let mut recent = None;
+    for ch in s.chars() {
+        match ch {
+            x if x.is_digit(10) => {
+                if recent.is_none() {
+                    sum += x.to_digit(10).unwrap() * 10;
                 }
-
-                l += 1;
+                recent = Some(x.to_digit(10).unwrap());
             }
-            None => end = true,
+            // otherwise
+            x => {
+                update_word(&mut word, x);
+                if let Some(val) = check_word(&word, &hash) {
+                    if recent.is_none() {
+                        sum += *val * 10;
+                    }
+                    recent = Some(*val);
+                }
+            }
         }
     }
-    end = false;
-    word.clear();
-    while !end {
-        match s.chars().nth(r) {
-            Some(x) if x.is_digit(10) => {
-                b = x.to_digit(10).unwrap();
-                end = true;
-            }
-            Some(letter) => {
-                update_word(&mut word, letter);
-                if let Some(val) = check_word(&word, &hash, false) {
-                    b = *val as u32;
-                    end = true;
-                }
-
-                r -= 1;
-            }
-            None => end = true,
-        }
-    }
-    println!("{}{}", a, b);
-    (a * 10 + b) as usize
+    // almost certain that this doesn't need to be unwrap_or, but I have it just in case
+    sum += recent.unwrap_or(0);
+    sum as usize
 }
 
 fn update_word(word: &mut VecDeque<char>, letter: char) {
@@ -94,23 +72,13 @@ fn update_word(word: &mut VecDeque<char>, letter: char) {
     word.push_back(letter);
 }
 
-fn check_word<'a>(
-    letters: &VecDeque<char>,
-    hash: &'a HashMap<String, u8>,
-    forwards: bool,
-) -> Option<&'a u8> {
+fn check_word<'a>(letters: &VecDeque<char>, hash: &'a HashMap<String, u32>) -> Option<&'a u32> {
     // check the last 3,4,5
 
     let len = letters.len();
     for l in [3, 4, 5].into_iter() {
         if len >= l {
-            let word: String;
-            if forwards {
-                word = letters.range((len - l)..).collect::<String>();
-            } else {
-                // reverses the letters when coming from the back
-                word = letters.range((len - l)..).rev().collect::<String>();
-            }
+            let word = letters.range((len - l)..).collect::<String>();
             if hash.get(&word).is_some() {
                 return hash.get(&word);
             }

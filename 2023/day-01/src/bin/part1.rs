@@ -2,7 +2,6 @@ use anyhow::Result;
 use std::{fs::File, io::Read};
 
 // Correct!
-// but this is also inefficient as all hell
 fn main() -> Result<()> {
     let mut input = File::open(format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "input1.txt"))?;
     let mut contents = String::new();
@@ -33,6 +32,7 @@ fn find_digits(s: &str) -> usize {
             _ => {}
         }
     }
+    // almost certain that this doesn't need to be unwrap_or, but I have it just in case
     sum += recent.unwrap_or(0);
     sum as usize
 }
