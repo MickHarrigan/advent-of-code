@@ -124,16 +124,35 @@ fn maps_to_filters(mut map_values: Vec<Vec<Vec<u64>>>) -> Vec<Vec<((u64, u64), (
         filters.push(inner);
     }
 
+    filters
+}
+
+fn solve(maps: Maps) -> u64 {
     // now that I have the filters, get each seed into it and see what the next layer will give
     // then run this again with each filter and the output from the previous to get a list of locations
     // then find the min of that
 
-    filters
+    let mut input = maps.seeds.clone();
+    for i in 0..input.len() {
+        for j in 0..maps.a2b.len() {
+            input[i] = check_mapping(input[i], &maps.ranges[j]);
+        }
+    }
+    input.into_iter().min().unwrap()
 }
 
-fn solve(mut maps: Maps) -> usize {
-    // using the maps' filters and seeds will find the min value
-    todo!();
+fn check_mapping(input: u64, filter: &Vec<((u64, u64), (u64, u64))>) -> u64 {
+    // converts the input type to the next level via the filter
+    match filter
+        .iter()
+        .find(|(src, _)| input >= src.0 && input <= src.1)
+    {
+        Some((src, dest)) => {
+            let offset = input - src.0;
+            dest.0 + offset
+        }
+        None => input,
+    }
 }
 
 #[cfg(test)]
