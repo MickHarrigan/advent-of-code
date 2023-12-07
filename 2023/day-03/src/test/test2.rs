@@ -21,5 +21,5 @@ fn case1() {
 
 #[test]
 fn case2() {
-    assert_eq!(64, parse_schematic(String::from("2*4*8")));
+    assert_eq!(40, parse_schematic(String::from("2*4*8")));
 }
